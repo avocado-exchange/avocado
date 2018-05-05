@@ -2,14 +2,31 @@ pragma solidity ^0.4.21;
 
 contract Catalog {
 
-    struct Listing {
-        address contract;
-        bytes32 title;
-        uint cost;
-    }
+  struct SongMetadata {
+    bytes32 format;
+    bytes32 filetype;
+    bytes32 filename;
 
-    function Catalog() {
+    bytes32 title;
+    bytes32 album;
+    bytes32 artist;
+    bytes32 albumArtist;
+    bytes32 composer;
+    bytes32 genre;
+    bytes32 year;
 
-    }
+    int trackNum;
+    int discNum;
+
+  }
+  struct Listing {
+    address contract;
+    uint cost;
+    SongMetadata meta;
+  }
+
+  function Catalog() {
+
+  }
 
 }
