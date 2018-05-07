@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.18;
 
 contract Catalog {
 
@@ -54,20 +54,20 @@ contract Catalog {
     uint256 randomness;
   }
 
-  function Catalog() {
+  function Catalog() public {
 
   }
 
-  function listSong(uint256 cost, uint format, uint filename, bytes32 title,
+  function listSong(uint256 cost, uint format, bytes32 filename, bytes32 title,
     bytes32 artist, bytes32 album, bytes32 genre, uint year, uint length,
     uint numChunks)
     public returns (uint) {
     uint newIndex = nextSongIndexToAssign;
     nextSongIndexToAssign += 1;
-    Listing storage listing = listings[newIndex];
+    Listing storage listing = songIndexToListing[newIndex];
 
     // song has already been listed
-    require(!isListed);
+    //require(!isListed);
     listing.seller = msg.sender;
     listing.cost = cost;
     listing.numChunks = numChunks;
@@ -84,17 +84,17 @@ contract Catalog {
     return newIndex;
   }
 
-  function chunkServerJoin(bytes32 hostname) {
+  function chunkServerJoin(bytes32 hostname) public {
     ChunkServer storage server = addressToChunkServer[msg.sender];
     require(server.lastSeenTime == 0x0);
     server.hostname = hostname;
     server.lastSeenTime = now;
   }
 
-  function chunkServerSubmitRandomness(uint256 randomness, uint song) {
+  function chunkServerSubmitRandomness(uint256 randomness, uint song) public {
     ChunkServer storage server = addressToChunkServer[msg.sender];
     require(server.lastSeenTime > 0x0);
-    Listing storage listing = listings[newIndex]
+    Listing storage listing = songIndexToListing[song];
     require(listing.isListed);
     require(listing.numRandomness < quorum);
     listing.csSubmittedRandomness.push(msg.sender);
@@ -112,11 +112,11 @@ contract Catalog {
 
   }
 
-  function revealChunks(bytes32 key1, bytes32 key2, uint song) {
-    Listing storage listing = listings[newIndex];
+  function revealChunks(bytes32 key1, bytes32 key2, uint song) public {
+    Listing storage listing = songIndexToListing[song];
     require(listing.isListed);
     require(!listing.isAvailable);
-    require(listing.owner == msg.sender);
+    require(listing.seller == msg.sender);
 
     listing.chunk1Key = key1;
     listing.chunk2Key = key2;
