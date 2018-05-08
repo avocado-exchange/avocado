@@ -56,6 +56,13 @@ contract Catalog {
     uint256 randomness;
   }
 
+  function getListingName(uint32 songId) public view returns (bytes32) {
+    Listing storage listing = songIndexToListing[songId];
+    require(listing.isListed);
+    return listing.title;
+  }
+
+/*
   function getListingInfo(uint32 songId) public view returns (address, uint32, bool) {
     Listing storage listing = songIndexToListing[songId];
     require(listing.isListed);
@@ -70,6 +77,7 @@ contract Catalog {
     return (listing.format, listing.filename, listing.title, listing.album,
     listing.artist, listing.genre, listing.year, listing.length);
   }
+*/
 
   function Catalog() public {
 
