@@ -21,6 +21,7 @@ contract Catalog {
 
   struct Listing {
     address seller;
+    /* cost is in gwei */
     uint32 cost;
     bool isAvailable;
     bool isListed;
@@ -70,17 +71,21 @@ contract Catalog {
     require(listing.isListed);
     return (listing.seller, listing.cost, listing.isAvailable);
   }
-
-  function getListingMetadata(uint32 songId) public view returns
-  (uint32, bytes32, bytes32, bytes32, bytes32, bytes32, uint32, uint32) {
-    Listing storage listing = songIndexToListing[songId];
-    require(listing.isListed);
-
-    return (listing.format, listing.filename, listing.title, listing.album,
-    listing.artist, listing.genre, listing.year, listing.length);
-  }
 */
+  function getListingMetadata(uint32 songId) public view returns
+  (bytes32, bytes32, bytes32, bytes32, bytes32, uint32, uint32) {
 
+    if (songIndexToListing[songId].isListed) {
+    return (songIndexToListing[songId].filename, songIndexToListing[songId].title,
+      songIndexToListing[songId].album, songIndexToListing[songId].artist,
+      songIndexToListing[songId].genre, songIndexToListing[songId].year,
+      songIndexToListing[songId].length);
+
+    } else {
+      revert();
+    }
+
+  }
   function Catalog() public {}
 
   function listSong(uint32 cost, uint32 format, bytes32 filename, bytes32 title,
