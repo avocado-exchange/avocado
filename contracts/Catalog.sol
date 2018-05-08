@@ -11,7 +11,9 @@ contract Catalog {
   mapping (uint32 => ChunkServer) indexToChunkServer;
   mapping (address => ChunkServer) addressToChunkServer;
 
-  event SongListed(address indexed lister, uint32 songId);
+  event SongListed(address lister, uint32 songId);
+  event SongPublished(uint32 songId);
+  event RandomnessReady(address[] chunkServers);
 
   struct ChunkServer {
     address account;
@@ -25,13 +27,14 @@ contract Catalog {
     uint32 cost;
     bool isAvailable;
     bool isListed;
-    bool isRandomnessReady;
+    bool randomnessReady;
     bytes32[] chunkHashes;
     bytes32 previewChunk1Hash;
     bytes32 previewChunk2Hash;
     bytes32 chunk1Key;
     bytes32 chunk2Key;
     uint numChunks;
+    bool hasChunks;
 
     /* Song metadata */
     // 0 is mp3
@@ -54,14 +57,14 @@ contract Catalog {
     /* ChunkServer info */
     address[] csSubmittedRandomness;
     uint32 numRandomness;
-    uint256 randomness;
+    uint32 randomness;
   }
 
   function getListingName(uint32 songId) public view returns (bytes32) {
     if (songIndexToListing[songId].isListed) {
         return songIndexToListing[songId].title;
     } else {
-        return "";
+        return "Missing title";
     }
   }
 
@@ -91,13 +94,11 @@ contract Catalog {
   function listSong(uint32 cost, uint32 format, bytes32 filename, bytes32 title,
     bytes32 artist, bytes32 album, bytes32 genre, uint32 year, uint32 length,
     uint32 numChunks)
-    public returns (uint) {
+    public returns (bytes32) {
     uint32 newIndex = nextSongIndexToAssign;
     nextSongIndexToAssign += 1;
     Listing storage listing = songIndexToListing[newIndex];
 
-    // song has already been listed
-    //require(!isListed);
     listing.seller = msg.sender;
     listing.cost = cost;
     listing.numChunks = numChunks;
@@ -111,10 +112,11 @@ contract Catalog {
     listing.genre = genre;
     listing.year = year;
     listing.length = length;
+    listing.hasChunks = false;
 
     SongListed(msg.sender, newIndex);
 
-    return newIndex;
+    return listing.title;
   }
 
   function chunkServerJoin(bytes32 hostname) public {
@@ -124,7 +126,7 @@ contract Catalog {
     server.lastSeenTime = now;
   }
 
-  function chunkServerSubmitRandomness(uint256 randomness, uint32 song) public {
+  function chunkServerSubmitRandomness(uint32 randomness, uint32 song) public {
     ChunkServer storage server = addressToChunkServer[msg.sender];
     require(server.lastSeenTime > 0x0);
     Listing storage listing = songIndexToListing[song];
@@ -135,19 +137,42 @@ contract Catalog {
     listing.randomness = listing.randomness ^ randomness;
 
     if (listing.numRandomness >= quorum) {
-      uint256 chunk1 = listing.randomness % listing.numChunks;
+        listing.randomnessReady = true;
+        RandomnessReady(listing.csSubmittedRandomness);
+    }
+
+    if (listing.randomnessReady && listing.hasChunks) {
+      uint chunk1 = listing.randomness % listing.numChunks;
       // bitshift for now I guess
-      uint256 chunk2 = (listing.randomness ** 1024) % listing.numChunks;
+      uint chunk2 = (listing.randomness ** 1024) % listing.numChunks;
 
       listing.previewChunk1Hash = listing.chunkHashes[chunk1];
       listing.previewChunk2Hash = listing.chunkHashes[chunk2];
     }
+  }
 
+  function publishChunks(uint32 song, bytes32[] hashes) public {
+    Listing storage listing = songIndexToListing[song];
+    require(listing.isListed);
+    require(!listing.isAvailable);
+    require(listing.seller == msg.sender);
+    listing.chunkHashes = hashes;
+    listing.hasChunks = true;
+
+    if (listing.randomnessReady) {
+      uint chunk1 = listing.randomness % listing.numChunks;
+      // bitshift for now I guess
+      uint chunk2 = (listing.randomness ** 1024) % listing.numChunks;
+
+      listing.previewChunk1Hash = listing.chunkHashes[chunk1];
+      listing.previewChunk2Hash = listing.chunkHashes[chunk2];
+    }
   }
 
   function revealChunks(bytes32 key1, bytes32 key2, uint32 song) public {
     Listing storage listing = songIndexToListing[song];
     require(listing.isListed);
+    require(listing.hasChunks);
     require(!listing.isAvailable);
     require(listing.seller == msg.sender);
 
