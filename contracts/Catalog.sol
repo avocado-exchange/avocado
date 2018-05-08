@@ -32,15 +32,15 @@ contract Catalog {
 
     /* Song metadata */
     // 0 is mp3
-    uint format;
+    uint32 format;
     bytes32 filename;
 
     bytes32 title;
     bytes32 album;
     bytes32 artist;
     bytes32 genre;
-    uint year;
-    uint length;
+    uint32 year;
+    uint32 length;
 
     // not needed for now
     //bytes32 albumArtist;
@@ -50,7 +50,7 @@ contract Catalog {
 
     /* ChunkServer info */
     address[] csSubmittedRandomness;
-    uint numRandomness;
+    uint32 numRandomness;
     uint256 randomness;
   }
 
@@ -58,9 +58,9 @@ contract Catalog {
 
   }
 
-  function listSong(uint256 cost, uint format, bytes32 filename, bytes32 title,
-    bytes32 artist, bytes32 album, bytes32 genre, uint year, uint length,
-    uint numChunks)
+  function listSong(uint32 cost, uint32 format, bytes32 filename, bytes32 title,
+    bytes32 artist, bytes32 album, bytes32 genre, uint32 year, uint32 length,
+    uint32 numChunks)
     public returns (uint) {
     uint newIndex = nextSongIndexToAssign;
     nextSongIndexToAssign += 1;
