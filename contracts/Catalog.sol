@@ -2,14 +2,16 @@ pragma solidity ^0.4.18;
 
 contract Catalog {
 
-  uint constant quorum = 3;
-  uint public nextSongIndexToAssign = 0;
-  uint public nextChunkServerIndexToAssign = 0;
+  uint32 constant quorum = 3;
+  uint32 public nextSongIndexToAssign = 0;
+  uint32 public nextChunkServerIndexToAssign = 0;
 
-  mapping (uint => address) songIndexToOwner;
-  mapping (uint => Listing) songIndexToListing;
-  mapping (uint => ChunkServer) indexToChunkServer;
+  mapping (uint32 => address) songIndexToOwner;
+  mapping (uint32 => Listing) songIndexToListing;
+  mapping (uint32 => ChunkServer) indexToChunkServer;
   mapping (address => ChunkServer) addressToChunkServer;
+
+  event SongListed(address indexed lister, uint32 songId);
 
   struct ChunkServer {
     address account;
@@ -62,7 +64,7 @@ contract Catalog {
     bytes32 artist, bytes32 album, bytes32 genre, uint32 year, uint32 length,
     uint32 numChunks)
     public returns (uint) {
-    uint newIndex = nextSongIndexToAssign;
+    uint32 newIndex = nextSongIndexToAssign;
     nextSongIndexToAssign += 1;
     Listing storage listing = songIndexToListing[newIndex];
 
@@ -91,7 +93,7 @@ contract Catalog {
     server.lastSeenTime = now;
   }
 
-  function chunkServerSubmitRandomness(uint256 randomness, uint song) public {
+  function chunkServerSubmitRandomness(uint256 randomness, uint32 song) public {
     ChunkServer storage server = addressToChunkServer[msg.sender];
     require(server.lastSeenTime > 0x0);
     Listing storage listing = songIndexToListing[song];
@@ -112,7 +114,7 @@ contract Catalog {
 
   }
 
-  function revealChunks(bytes32 key1, bytes32 key2, uint song) public {
+  function revealChunks(bytes32 key1, bytes32 key2, uint32 song) public {
     Listing storage listing = songIndexToListing[song];
     require(listing.isListed);
     require(!listing.isAvailable);
