@@ -14,6 +14,7 @@ contract Catalog {
   event SongListed(address lister, uint32 songId);
   event SongPublished(uint32 songId);
   event RandomnessReady(address[] chunkServers);
+  event ListingPurchased(address buyer, uint32 songId, address seller);
 
   struct ChunkServer {
     address account;
@@ -23,7 +24,7 @@ contract Catalog {
 
   struct Listing {
     address seller;
-    /* cost is in gwei */
+    /* cost is in wei */
     uint32 cost;
     bool isAvailable;
     bool isListed;
@@ -181,6 +182,18 @@ contract Catalog {
 
     // TODO: should make sure chunkservers have the chunks first
     listing.isAvailable = true;
+  }
+
+  function purchaseSong(uint32 song) public payable {
+    Listing storage listing = songIndexToListing[song];
+    require(listing.isListed);
+    require(listing.hasChunks);
+    require(listing.isAvailable);
+
+    require(msg.value > listing.cost);
+    ListingPurchased(msg.sender, song, listing.seller);
+    listing.seller.transfer(msg.value);
+
   }
 
 }
