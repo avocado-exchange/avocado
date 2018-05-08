@@ -21,7 +21,7 @@ contract Catalog {
 
   struct Listing {
     address seller;
-    uint256 cost;
+    uint32 cost;
     bool isAvailable;
     bool isListed;
     bool isRandomnessReady;
@@ -54,6 +54,21 @@ contract Catalog {
     address[] csSubmittedRandomness;
     uint32 numRandomness;
     uint256 randomness;
+  }
+
+  function getListingInfo(uint32 songId) public view returns (address, uint32, bool) {
+    Listing storage listing = songIndexToListing[songId];
+    require(listing.isListed);
+    return (listing.seller, listing.cost, listing.isAvailable);
+  }
+
+  function getListingMetadata(uint32 songId) public view returns
+  (uint32, bytes32, bytes32, bytes32, bytes32, bytes32, uint32, uint32) {
+    Listing storage listing = songIndexToListing[songId];
+    require(listing.isListed);
+
+    return (listing.format, listing.filename, listing.title, listing.album,
+    listing.artist, listing.genre, listing.year, listing.length);
   }
 
   function Catalog() public {
