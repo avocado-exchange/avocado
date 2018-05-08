@@ -57,9 +57,11 @@ contract Catalog {
   }
 
   function getListingName(uint32 songId) public view returns (bytes32) {
-    Listing storage listing = songIndexToListing[songId];
-    require(listing.isListed);
-    return listing.title;
+    if (songIndexToListing[songId].isListed) {
+        return songIndexToListing[songId].title;
+    } else {
+        return "";
+    }
   }
 
 /*
@@ -79,9 +81,7 @@ contract Catalog {
   }
 */
 
-  function Catalog() public {
-
-  }
+  function Catalog() public {}
 
   function listSong(uint32 cost, uint32 format, bytes32 filename, bytes32 title,
     bytes32 artist, bytes32 album, bytes32 genre, uint32 year, uint32 length,
@@ -106,6 +106,9 @@ contract Catalog {
     listing.genre = genre;
     listing.year = year;
     listing.length = length;
+
+    SongListed(msg.sender, newIndex);
+
     return newIndex;
   }
 
