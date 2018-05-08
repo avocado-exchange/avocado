@@ -2,7 +2,7 @@ pragma solidity ^0.4.18;
 
 contract Catalog {
 
-  uint32 constant quorum = 3;
+  uint32 constant quorum = 1;
   uint32 public nextSongIndexToAssign = 0;
   uint32 public nextChunkServerIndexToAssign = 0;
 
@@ -13,7 +13,7 @@ contract Catalog {
 
   event SongListed(address lister, uint32 songId);
   event SongPublished(uint32 songId);
-  event RandomnessReady(address[] chunkServers);
+  event RandomnessReady(uint ch1, uint ch2, bytes32[] chunkServers);
   event ListingPurchased(address buyer, uint32 songId, address seller);
 
   struct ChunkServer {
@@ -56,7 +56,7 @@ contract Catalog {
     //int discNum;
 
     /* ChunkServer info */
-    address[] csSubmittedRandomness;
+    bytes32[] csSubmittedRandomness;
     uint32 numRandomness;
     uint32 randomness;
   }
@@ -133,19 +133,21 @@ contract Catalog {
     Listing storage listing = songIndexToListing[song];
     require(listing.isListed);
     require(listing.numRandomness < quorum);
-    listing.csSubmittedRandomness.push(msg.sender);
+    require(listing.hasChunks);
+    listing.csSubmittedRandomness.push(server.hostname);
     listing.numRandomness += 1;
     listing.randomness = listing.randomness ^ randomness;
 
     if (listing.numRandomness >= quorum) {
         listing.randomnessReady = true;
-        RandomnessReady(listing.csSubmittedRandomness);
     }
 
     if (listing.randomnessReady && listing.hasChunks) {
       uint chunk1 = listing.randomness % listing.numChunks;
       // bitshift for now I guess
       uint chunk2 = (listing.randomness ** 1024) % listing.numChunks;
+    
+      RandomnessReady(chunk1, chunk2, listing.csSubmittedRandomness);
 
       listing.previewChunk1Hash = listing.chunkHashes[chunk1];
       listing.previewChunk2Hash = listing.chunkHashes[chunk2];
@@ -160,6 +162,9 @@ contract Catalog {
     listing.chunkHashes = hashes;
     listing.hasChunks = true;
 
+    SongPublished(song);
+
+    /*
     if (listing.randomnessReady) {
       uint chunk1 = listing.randomness % listing.numChunks;
       // bitshift for now I guess
@@ -167,7 +172,7 @@ contract Catalog {
 
       listing.previewChunk1Hash = listing.chunkHashes[chunk1];
       listing.previewChunk2Hash = listing.chunkHashes[chunk2];
-    }
+    }*/
   }
 
   function revealChunks(bytes32 key1, bytes32 key2, uint32 song) public {
@@ -182,6 +187,10 @@ contract Catalog {
 
     // TODO: should make sure chunkservers have the chunks first
     listing.isAvailable = true;
+  }
+
+  function isListingAvailable(uint32 song) view public returns (bool) {
+    return songIndexToListing[song].isAvailable;
   }
 
   function purchaseSong(uint32 song) public payable {
