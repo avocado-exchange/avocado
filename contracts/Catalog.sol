@@ -114,6 +114,7 @@ contract Catalog {
     listing.year = year;
     listing.length = length;
     listing.hasChunks = false;
+    listing.randomness = length;
 
     SongListed(msg.sender, newIndex);
 
