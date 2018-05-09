@@ -14,7 +14,7 @@ contract Catalog {
   event SongListed(address lister, uint32 songId);
   event SongPublished(uint32 songId);
   event RandomnessReady(uint ch1, uint ch2, bytes32[] chunkServers);
-  event ListingPurchased(address buyer, uint32 songId, address seller);
+  event ListingPurchased(address buyer, uint32 songId, bytes32 seller, bytes32[] hashes, bytes32[] chunkservers);
 
   struct ChunkServer {
     address account;
@@ -24,6 +24,7 @@ contract Catalog {
 
   struct Listing {
     address seller;
+    bytes32 sellerHost;
     /* cost is in wei */
     uint32 cost;
     bool isAvailable;
@@ -155,13 +156,14 @@ contract Catalog {
     }
   }
 
-  function publishChunks(uint32 song, bytes32[] hashes) public {
+  function publishChunks(uint32 song, bytes32[] hashes, bytes32 hostname) public {
     Listing storage listing = songIndexToListing[song];
     require(listing.isListed);
     require(!listing.isAvailable);
     require(listing.seller == msg.sender);
     listing.chunkHashes = hashes;
     listing.hasChunks = true;
+    listing.sellerHost = hostname;
 
     SongPublished(song);
 
@@ -201,9 +203,14 @@ contract Catalog {
     require(listing.isAvailable);
 
     require(msg.value > listing.cost);
-    ListingPurchased(msg.sender, song, listing.seller);
+    ListingPurchased(msg.sender, song, listing.sellerHost, listing.chunkHashes, listing.csSubmittedRandomness);
     listing.seller.transfer(msg.value);
 
   }
 
+  function getPreview(uint32 song) view public returns (bytes32, bytes32, bytes32, bytes32, bytes32[]) {
+    require(songIndexToListing[song].isAvailable);
+
+    return (songIndexToListing[song].previewChunk1Hash, songIndexToListing[song].previewChunk2Hash, songIndexToListing[song].chunk1Key, songIndexToListing[song].chunk2Key, songIndexToListing[song].csSubmittedRandomness);
+  }
 }
