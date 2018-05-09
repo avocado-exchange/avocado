@@ -77,11 +77,25 @@ contract Catalog {
     return (listing.seller, listing.cost, listing.isAvailable);
   }
 */
+  function getListingInfo(uint32 songId) public view returns 
+  (address, uint32, bool, bytes32, bytes32, bytes32[]) {
+    if (songIndexToListing[songId].isListed) {
+      return (songIndexToListing[songId].seller,
+        songIndexToListing[songId].cost, songIndexToListing[songId].isAvailable,
+        songIndexToListing[songId].previewChunk1Hash,
+        songIndexToListing[songId].chunk1Key,
+        songIndexToListing[songId].chunkHashes);
+
+    } else {
+      revert();
+    }
+  }
+
   function getListingMetadata(uint32 songId) public view returns
   (bytes32, bytes32, bytes32, bytes32, bytes32, uint32, uint32) {
 
     if (songIndexToListing[songId].isListed) {
-    return (songIndexToListing[songId].filename, songIndexToListing[songId].title,
+      return (songIndexToListing[songId].filename, songIndexToListing[songId].title,
       songIndexToListing[songId].album, songIndexToListing[songId].artist,
       songIndexToListing[songId].genre, songIndexToListing[songId].year,
       songIndexToListing[songId].length);
@@ -89,8 +103,8 @@ contract Catalog {
     } else {
       revert();
     }
-
   }
+
   function Catalog() public {}
 
   function listSong(uint32 cost, uint32 format, bytes32 filename, bytes32 title,
@@ -148,7 +162,7 @@ contract Catalog {
       uint chunk1 = listing.randomness % listing.numChunks;
       // bitshift for now I guess
       uint chunk2 = (listing.randomness ** 1024) % listing.numChunks;
-    
+
       RandomnessReady(chunk1, chunk2, listing.csSubmittedRandomness);
 
       listing.previewChunk1Hash = listing.chunkHashes[chunk1];
